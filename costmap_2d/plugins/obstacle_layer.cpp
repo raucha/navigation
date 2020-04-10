@@ -340,6 +340,7 @@ void ObstacleLayer::pointCloud2Callback(const sensor_msgs::PointCloud2ConstPtr& 
 void ObstacleLayer::updateBounds(double robot_x, double robot_y, double robot_yaw, double* min_x,
                                           double* min_y, double* max_x, double* max_y)
 {
+  ROS_INFO_STREAM("updateBounds called");
   if (rolling_window_)
     updateOrigin(robot_x - getSizeInMetersX() / 2, robot_y - getSizeInMetersY() / 2);
   if (!enabled_)
@@ -363,6 +364,7 @@ void ObstacleLayer::updateBounds(double robot_x, double robot_y, double robot_ya
   {
     raytraceFreespace(clearing_observations[i], min_x, min_y, max_x, max_y);
   }
+  int point_num = 0;
 
   // place the new obstacles into a priority queue... each with a priority of zero to begin with
   for (std::vector<Observation>::const_iterator it = observations.begin(); it != observations.end(); ++it)
@@ -375,6 +377,7 @@ void ObstacleLayer::updateBounds(double robot_x, double robot_y, double robot_ya
 
     for (unsigned int i = 0; i < cloud.points.size(); ++i)
     {
+      point_num++;
       double px = cloud.points[i].x, py = cloud.points[i].y, pz = cloud.points[i].z;
 
       // if the obstacle is too high or too far away from the robot we won't add it
@@ -408,8 +411,8 @@ void ObstacleLayer::updateBounds(double robot_x, double robot_y, double robot_ya
       touch(px, py, min_x, min_y, max_x, max_y);
     }
   }
-
   updateFootprint(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
+  ROS_INFO_STREAM("point num:"<<point_num);
 }
 
 void ObstacleLayer::updateFootprint(double robot_x, double robot_y, double robot_yaw, double* min_x, double* min_y,
@@ -473,7 +476,15 @@ bool ObstacleLayer::getMarkingObservations(std::vector<Observation>& marking_obs
     marking_buffers_[i]->getObservations(marking_observations);
     current = marking_buffers_[i]->isCurrent() && current;
     marking_buffers_[i]->unlock();
+    // if(!marking_observations.empty()){
+    //   if(!marking_observations.end()->cloud_->empty()){
+    //     ROS_INFO_STREAM("marking_observations.end()->cloud_.size()"<<marking_observations.end()->cloud_->size());
+    //   }
+    // }else{
+    //   ROS_INFO_STREAM("marking_observations.end()==NULL");
+    // }
   }
+  // ROS_INFO_STREAM("marking_buffers_.size:"<< marking_buffers_.size()<<"  getObservations().size():"<<marking_observations.size());
   marking_observations.insert(marking_observations.end(),
                               static_marking_observations_.begin(), static_marking_observations_.end());
   return current;
